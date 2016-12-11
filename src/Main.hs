@@ -18,10 +18,19 @@ main :: IO ()
 main = do
     print "enter gameID:"
     input <- getLine
-    eitherErrorOrStats <- getStats input
+    print "enter number of games today:"
+    ngamesio <- getLine
+    let ngames = read ngamesio :: Int
+    statGames ngames input
+
+statGames :: Int -> String -> IO ()
+statGames 0 id = return ()
+statGames i id = do
+    eitherErrorOrStats <- getStats id
     case eitherErrorOrStats of
         Left statsError -> print statsError
         Right stats -> mapM_ process stats
+    statGames (i-1) ("00" ++ show (read id + 1)) 
 
 data GameStats = GameStats {
     gameID   :: String,
@@ -90,7 +99,7 @@ getStats id = Stats.getSplitRows "boxscoretraditionalv2" "TeamStats"
       ("RangeType", Just "0"),
       ("StartPeriod", Just "1"),
       ("StartRange", Just "0")
- ]
+  ]
 
 calcScore :: Double -> GameStats -> String
 calcScore 0.0 gs = show (pts gs)
@@ -112,7 +121,6 @@ process gs = do
 update :: GameStats -> String -> IO ()
 update gs score = do
   let fn = "data/teams/" ++ (teamAbv gs) ++ ".txt"
-  --writeFile fn score
   writeFile fn score
   
 
