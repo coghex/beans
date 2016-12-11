@@ -35,6 +35,13 @@
   (major1) == 0 && (major2) <  2 || \
   (major1) == 0 && (major2) == 2 && (minor) <= 1)
 
+/* package strict-0.3.2 */
+#define VERSION_strict "0.3.2"
+#define MIN_VERSION_strict(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  3 || \
+  (major1) == 0 && (major2) == 3 && (minor) <= 2)
+
 /* package text-1.2.2.1 */
 #define VERSION_text "1.2.2.1"
 #define MIN_VERSION_text(major1,major2,minor) (\

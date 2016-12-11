@@ -6,9 +6,13 @@ module Main where
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as Aeson
 import Data.Aeson ((.:))
+import Control.Exception
+import System.IO.Error
+import Text.Read
 import qualified Data.NBA.Stats as Stats
 import qualified Data.ByteString.Internal as BSI
 import qualified Data.ByteString.Char8 as C
+import qualified System.IO.Strict as S
 
 main :: IO ()
 main = do
@@ -25,7 +29,7 @@ data GameStats = GameStats {
     teamName :: String,
     teamAbv  :: String,
     teamCity :: String,
-    min      :: Int,
+    min      :: String,
     fgm      :: Int,
     fga      :: Int,
     fgp      :: Double,
@@ -88,6 +92,46 @@ getStats id = Stats.getSplitRows "boxscoretraditionalv2" "TeamStats"
       ("StartRange", Just "0")
  ]
 
+calcScore :: Double -> GameStats -> String
+calcScore 0.0 gs = show (pts gs)
+calcScore prev gs = show $ ((fromIntegral (pts gs)) + prev)/2.0
+
+
+
 process :: GameStats -> IO ()
 process gs = do
-  print gs
+  t <- openTeam (teamAbv gs)
+  if (t == "Error") then do
+    t <- makeTeam gs
+    print t
+  else do
+    let newScore = calcScore (read t :: Double) gs
+    t <- update gs newScore
+    print t
+
+update :: GameStats -> String -> IO ()
+update gs score = do
+  let fn = "data/teams/" ++ (teamAbv gs) ++ ".txt"
+  --writeFile fn score
+  writeFile fn score
+  
+
+makeTeam :: GameStats -> IO ()
+makeTeam gs = do
+  let writeData = calcScore 0 gs
+  let fn = "data/teams/" ++ (teamAbv gs) ++ ".txt"
+  writeFile fn writeData
+
+openTeam :: String -> IO (String)
+openTeam n = do
+  let fn = "data/teams/" ++ n ++ ".txt"
+  contents <- tryJust handleReadFile (S.readFile fn)
+  case contents of
+    Left except -> return $ "Error"
+    Right cont -> return cont
+  where
+    handleReadFile :: IOError -> Maybe String
+    handleReadFile er
+      | isDoesNotExistError er = Just "team does not exist"
+      | isPermissionError   er = Just "permission denied"
+      | otherwise              = Nothing 
