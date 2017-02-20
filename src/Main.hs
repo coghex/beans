@@ -9,7 +9,9 @@ import Data.Aeson ((.:))
 import Control.Exception
 import System.IO.Error
 import Text.Read
+import Data.Function (on)
 import Data.List.Split
+import Data.List (sortBy, reverse)
 import qualified Data.NBA.Stats as Stats
 import qualified Data.ByteString.Internal as BSI
 import qualified Data.ByteString.Char8 as C
@@ -23,7 +25,82 @@ main = do
     ngamesio <- getLine
     let ngames = read ngamesio :: Int
     statGames ngames input
+    rankTeams
 
+rankTeams :: IO ()
+rankTeams = do
+  atl <- openTeam "ATL"
+  let atl2 = "ATL" : splitOn "\n" atl
+  bkn <- openTeam "BKN"
+  let bkn2 = "BKN" : splitOn "\n" bkn
+  bos <- openTeam "BOS"
+  let bos2 = "BOS" : splitOn "\n" bos
+  cha <- openTeam "CHA"
+  let cha2 = "CHA" : splitOn "\n" cha
+  chi <- openTeam "CHI"
+  let chi2 = "CHI" : splitOn "\n" chi
+  cle <- openTeam "CLE"
+  let cle2 = "CLE" : splitOn "\n" cle
+  dal <- openTeam "DAL"
+  let dal2 = "DAL" : splitOn "\n" dal
+  den <- openTeam "DEN"
+  let den2 = "DEN" : splitOn "\n" den
+  det <- openTeam "DET"
+  let det2 = "DET" : splitOn "\n" det
+  gsw <- openTeam "GSW"
+  let gsw2 = "GSW" : splitOn "\n" gsw
+  hou <- openTeam "HOU"
+  let hou2 = "HOU" : splitOn "\n" hou
+  ind <- openTeam "IND"
+  let ind2 = "IND" : splitOn "\n" ind
+  lac <- openTeam "LAC"
+  let lac2 = "LAC" : splitOn "\n" lac
+  lal <- openTeam "LAL"
+  let lal2 = "LAL" : splitOn "\n" lal
+  mem <- openTeam "MEM"
+  let mem2 = "MEM" : splitOn "\n" mem
+  mia <- openTeam "MIA"
+  let mia2 = "MIA" : splitOn "\n" mia
+  mil <- openTeam "MIL"
+  let mil2 = "MIL" : splitOn "\n" mil
+  min <- openTeam "MIN"
+  let min2 = "MIN" : splitOn "\n" min
+  nop <- openTeam "NOP"
+  let nop2 = "NOP" : splitOn "\n" nop
+  nyk <- openTeam "NYK"
+  let nyk2 = "NYK" : splitOn "\n" nyk
+  okc <- openTeam "OKC"
+  let okc2 = "OKC" : splitOn "\n" okc
+  orl <- openTeam "ORL"
+  let orl2 = "ORL" : splitOn "\n" orl
+  phi <- openTeam "PHI"
+  let phi2 = "PHI" : splitOn "\n" phi
+  phx <- openTeam "PHX"
+  let phx2 = "PHX" : splitOn "\n" phx
+  por <- openTeam "POR"
+  let por2 = "POR" : splitOn "\n" por
+  sac <- openTeam "SAC"
+  let sac2 = "SAC" : splitOn "\n" sac
+  sas <- openTeam "SAS"
+  let sas2 = "SAS" : splitOn "\n" sas
+  tor <- openTeam "TOR"
+  let tor2 = "TOR" : splitOn "\n" tor
+  uta <- openTeam "UTA"
+  let uta2 = "UTA" : splitOn "\n" uta
+  was <- openTeam "WAS"
+  let was2 = "WAS" : splitOn "\n" was
+
+  let scores = [atl2, bkn2, bos2, cha2, chi2, cle2, dal2, den2, det2, gsw2, hou2, ind2, lac2, lal2, mem2, mia2, mil2, min2, nop2, nyk2, okc2, orl2, phi2, phx2, por2, sac2, sas2, tor2, uta2, was2]
+  let scores2 = map calcRanks scores
+  let scores3 = reverse $ sortBy (compare `on` snd) (scores2)
+  let scores4 = map combineScore scores3
+  mapM_ putStrLn scores4
+
+calcRanks :: [String] -> (String, Double)
+calcRanks a = ((a!!0),((read (a!!1))+(read (a!!2))+(read (a!!3))))
+
+combineScore :: (String, Double) -> String
+combineScore (s, d) = s ++ ": " ++ show d
 
 statGames :: Int -> String -> IO ()
 statGames 0 id = return ()
@@ -160,13 +237,15 @@ process (gsopp:gss) gs
   | otherwise   = do
     t <- openTeam (teamAbv gs)
     if (t == "Error") then do
-      print $ minutes gs
+      --print $ minutes gs
       t <- makeTeam gs gsopp
-      print gsopp
+      --print gsopp
+      print "Creating Team..."
     else do
       let newScore = (calcScore (read ((lines t)!!0) :: Double) gs) ++ "\n" ++ (calcOff (read ((lines t)!!1) :: Double) gs gsopp ++ "\n" ++ calcDef (read ((lines t)!!2) :: Double) gs gsopp)
       t <- update gs newScore
-      print gsopp
+      --print gsopp
+      print $ (teamName gs) ++ " Stats Added"
     process gss gs
 
 update :: GameStats -> String -> IO ()
